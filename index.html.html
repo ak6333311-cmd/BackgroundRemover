@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Background Eraser Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bg-secondary: #ffffff;
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.15);
+            --accent: #667eea;
+            --accent-hover: #5568d3;
+            --danger: #f56565;
+            --success: #48bb78;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        [data-theme="dark"] {
+            --bg-secondary: #1a202c;
+            --text-primary: #e2e8f0;
+            --text-secondary: #a0aec0;
+            --glass-bg: rgba(26, 32, 44, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: var(--transition);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            letter-spacing: -0.5px;
+        }
+
+        .theme-toggle {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+            border-radius: 50px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+
+        .theme-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .upload-section {
+            background: var(--glass-bg);
+            border: 2px dashed var(--glass-border);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 60px 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .upload-section:hover {
+            border-color: var(--accent);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .upload-section.hidden {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.6;
+        }
+
+        .upload-section h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .upload-section p {
+            color: var(--text-secondary);
+            font-size: 15px;
+            margin-bottom: 20px;
+        }
+
+        .upload-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: var(--transition);
+        }
+
+        .upload-btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .editor-section {
+            display: none;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .editor-section.active {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+        }
+
+        .canvas-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #imageCanvas {
+            max-width: 100%;
+            max-height: 600px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            cursor: crosshair;
+            display: block;
+        }
+
+        .tools-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .tool-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .tool-group label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .brush-size-control {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .brush-size-value {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .brush-preview {
+            width: 100%;
+            height: 60px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .brush-circle {
+            background: var(--accent);
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            outline: none;
+            -webkit-appearance: none;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+            transition: var(--transition);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 3px 12px rgba(102, 126, 234, 0.6);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+        }
+
+        .mode-toggle {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .mode-btn {
+            padding: 12px;
+            border: 2px solid transparent;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-primary);
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .mode-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .action-buttons.hidden {
+            display: none;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: var(--glass-bg);
+            color: var(--text-primary);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #38a169;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+        }
+
+        .custom-cursor {
+            position: fixed;
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            display: none;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .custom-cursor.active {
+            display: block;
+        }
+
+        .checkerboard {
+            background-image: 
+                linear-gradient(45deg, #ccc 25%, transparent 25%),
+                linear-gradient(-45deg, #ccc 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #ccc 75%),
+                linear-gradient(-45deg, transparent 75%, #ccc 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        [data-theme="dark"] .checkerboard {
+            background-image: 
+                linear-gradient(45deg, #444 25%, transparent 25%),
+                linear-gradient(-45deg, #444 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #444 75%),
+                linear-gradient(-45deg, transparent 75%, #444 75%);
+        }
+
+        @media (max-width: 968px) {
+            .editor-section.active {
+                grid-template-columns: 1fr;
+            }
+
+            .tools-panel {
+                order: -1;
+            }
+
+            .logo {
+                font-size: 22px;
+            }
+
+            .upload-section {
+                padding: 40px 20px;
+            }
+
+            .upload-icon {
+                font-size: 48px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 15px;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .canvas-container {
+                padding: 15px;
+            }
+
+            #imageCanvas {
+                max-height: 400px;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .editor-section.active {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="custom-cursor" id="customCursor"></div>
+
+    <div class="container">
+        <header>
+            <div class="logo">🎨 Background Eraser Pro</div>
+            <button class="theme-toggle" id="themeToggle">🌙 Dark Mode</button>
+        </header>
+
+        <div class="upload-section" id="uploadSection">
+            <div class="upload-icon">📸</div>
+            <h2>Upload Your Image</h2>
+            <p>Drag and drop an image or click to browse</p>
+            <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                Choose Image
+            </button>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+
+        <div class="editor-section" id="editorSection">
+            <div class="canvas-container checkerboard">
+                <canvas id="imageCanvas"></canvas>
+            </div>
+
+            <div class="tools-panel">
+                <div class="tool-group">
+                    <label>Brush Size</label>
+                    <div class="brush-size-control">
+                        <div class="brush-size-value">
+                            <span>Size</span>
+                            <span id="brushSizeValue">30</span>
+                        </div>
+                        <input type="range" id="brushSize" min="5" max="100" value="30">
+                        <div class="brush-preview">
+                            <div class="brush-circle" id="brushPreview"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tool-group">
+                    <label>Mode</label>
+                    <div class="mode-toggle">
+                        <button class="mode-btn active" id="eraseBtn">✂️ Erase</button>
+                        <button class="mode-btn" id="restoreBtn">🔄 Restore</button>
+                    </div>
+                </div>
+
+                <div class="tool-group">
+                    <label>Instructions</label>
+                    <p style="font-size: 13px; line-height: 1.6; color: var(--text-secondary);">
+                        Use your mouse or finger to mark areas you want to remove. Switch between erase and restore modes as needed.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons hidden" id="actionButtons">
+            <button class="btn btn-primary" id="beforeAfterBtn">👁️ Before / After</button>
+            <button class="btn btn-secondary" id="resetBtn">🔄 Reset</button>
+            <button class="btn btn-success" id="downloadBtn">💾 Download PNG</button>
+            <button class="btn btn-danger" id="newImageBtn">🖼️ New Image</button>
+        </div>
+
+        <footer>
+            <p>© 2024 Background Eraser Pro • Professional Photo Editing Tool</p>
+        </footer>
+    </div>
+
+    <script>
+        let imageLoaded = false;
+        let isDrawing = false;
+        let brushSize = 30;
+        let eraseMode = true;
+        let originalImageData = null;
+        let currentImageData = null;
+        let showingBefore = false;
+
+        const fileInput = document.getElementById('fileInput');
+        const uploadSection = document.getElementById('uploadSection');
+        const editorSection = document.getElementById('editorSection');
+        const actionButtons = document.getElementById('actionButtons');
+        const canvas = document.getElementById('imageCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const brushSizeInput = document.getElementById('brushSize');
+        const brushSizeValue = document.getElementById('brushSizeValue');
+        const brushPreview = document.getElementById('brushPreview');
+        const eraseBtn = document.getElementById('eraseBtn');
+        const restoreBtn = document.getElementById('restoreBtn');
+        const beforeAfterBtn = document.getElementById('beforeAfterBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const newImageBtn = document.getElementById('newImageBtn');
+        const themeToggle = document.getElementById('themeToggle');
+        const customCursor = document.getElementById('customCursor');
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            themeToggle.textContent = newTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+        });
+
+        fileInput.addEventListener('change', handleFileSelect);
+        uploadSection.addEventListener('click', () => fileInput.click());
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.style.borderColor = 'var(--accent)';
+        });
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.style.borderColor = 'var(--glass-border)';
+        });
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.style.borderColor = 'var(--glass-border)';
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect();
+            }
+        });
+
+        function handleFileSelect() {
+            const file = fileInput.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        initializeCanvas(img);
+                        uploadSection.classList.add('hidden');
+                        editorSection.classList.add('active');
+                        actionButtons.classList.remove('hidden');
+                        imageLoaded = true;
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function initializeCanvas(img) {
+            const maxWidth = 1000;
+            const maxHeight = 600;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxWidth) {
+                height = (height * maxWidth) / width;
+                width = maxWidth;
+            }
+            if (height > maxHeight) {
+                width = (width * maxHeight) / height;
+                height = maxHeight;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+
+            originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            currentImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        }
+
+        brushSizeInput.addEventListener('input', (e) => {
+            brushSize = parseInt(e.target.value);
+            brushSizeValue.textContent = brushSize;
+            updateBrushPreview();
+        });
+
+        function updateBrushPreview() {
+            brushPreview.style.width = `${Math.min(brushSize, 50)}px`;
+            brushPreview.style.height = `${Math.min(brushSize, 50)}px`;
+        }
+
+        eraseBtn.addEventListener('click', () => {
+            eraseMode = true;
+            eraseBtn.classList.add('active');
+            restoreBtn.classList.remove('active');
+        });
+
+        restoreBtn.addEventListener('click', () => {
+            eraseMode = false;
+            restoreBtn.classList.add('active');
+            eraseBtn.classList.remove('active');
+        });
+
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseleave', stopDrawing);
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const mouseEvent = new MouseEvent('mouseup', {});
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        canvas.addEventListener('mouseenter', () => {
+            customCursor.classList.add('active');
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            customCursor.classList.remove('active');
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            customCursor.style.left = e.clientX + 'px';
+            customCursor.style.top = e.clientY + 'px';
+            customCursor.style.width = brushSize + 'px';
+            customCursor.style.height = brushSize + 'px';
+        });
+
+        function startDrawing(e) {
+            if (!imageLoaded) return;
+            isDrawing = true;
+            draw(e);
+        }
+
+        function draw(e) {
+            if (!isDrawing || !imageLoaded) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+
+            if (eraseMode) {
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.beginPath();
+                ctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+                ctx.fill();
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+                
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const pixels = imageData.data;
+                const origPixels = originalImageData.data;
+                
+                for (let py = Math.max(0, y - brushSize / 2); py < Math.min(canvas.height, y + brushSize / 2); py++) {
+                    for (let px = Math.max(0, x - brushSize / 2); px < Math.min(canvas.width, x + brushSize / 2); px++) {
+                        const distance = Math.sqrt((px - x) ** 2 + (py - y) ** 2);
+                        if (distance < brushSize / 2) {
+                            const index = (Math.floor(py) * canvas.width + Math.floor(px)) * 4;
+                            pixels[index] = origPixels[index];
+                            pixels[index + 1] = origPixels[index + 1];
+                            pixels[index + 2] = origPixels[index + 2];
+                            pixels[index + 3] = origPixels[index + 3];
+                        }
+                    }
+                }
+                
+                ctx.putImageData(imageData, 0, 0);
+            }
+
+            ctx.globalCompositeOperation = 'source-over';
+            currentImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        beforeAfterBtn.addEventListener('click', () => {
+            if (showingBefore) {
+                ctx.putImageData(currentImageData, 0, 0);
+                beforeAfterBtn.textContent = '👁️ Before / After';
+                showingBefore = false;
+            } else {
+                currentImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                ctx.putImageData(originalImageData, 0, 0);
+                beforeAfterBtn.textContent = '👁️ Show After';
+                showingBefore = true;
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            ctx.putImageData(originalImageData, 0, 0);
+            currentImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            showingBefore = false;
+            beforeAfterBtn.textContent = '👁️ Before / After';
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            if (!imageLoaded) return;
+            
+            if (showingBefore) {
+                ctx.putImageData(currentImageData, 0, 0);
+                showingBefore = false;
+                beforeAfterBtn.textContent = '👁️ Before / After';
+            }
+
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'background-removed-' + Date.now() + '.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        });
+
+        newImageBtn.addEventListener('click', () => {
+            imageLoaded = false;
+            isDrawing = false;
+            showingBefore = false;
+            uploadSection.classList.remove('hidden');
+            editorSection.classList.remove('active');
+            actionButtons.classList.add('hidden');
+            fileInput.value = '';
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
+
+        updateBrushPreview();
+    </script>
+</body>
+</html>
